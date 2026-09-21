@@ -21,8 +21,15 @@ from app.routers.reports import router as reports_router
 from app.routers.resources import router as resources_router
 from app.routers.users import router as users_router
 from app.routers.visits import router as visits_router
+from app.services.bootstrap import ensure_bootstrap_admin
 
 app = FastAPI(title="Thai Traditional Medicine Clinic API")
+
+
+@app.on_event("startup")
+def bootstrap_admin_account():
+    ensure_bootstrap_admin()
+
 app.state.limiter = Limiter(key_func=get_remote_address)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(

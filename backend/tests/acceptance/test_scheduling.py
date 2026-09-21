@@ -2,6 +2,7 @@ import secrets
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
@@ -144,9 +145,8 @@ def test_reschedule_conflict_keeps_original():
             "expected_version": 1,
         }
         assert c.patch(f"/api/v1/appointments/{a['id']}", headers=h, json=moved).status_code == 409
-        original = c.get(
-            "/api/v1/appointments", headers=h, params={"day": start.date().isoformat()}
-        ).json()
+        thai_day = start.astimezone(ZoneInfo("Asia/Bangkok")).date().isoformat()
+        original = c.get("/api/v1/appointments", headers=h, params={"day": thai_day}).json()
         assert next(x for x in original if x["id"] == a["id"])["starts_at"] == a["starts_at"]
         moved.update(
             starts_at=(start + timedelta(hours=4)).isoformat(),
