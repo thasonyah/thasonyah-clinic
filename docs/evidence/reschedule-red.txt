@@ -1,0 +1,49 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_reschedule_conflict_keeps_original ____________________
+
+    def test_reschedule_conflict_keeps_original():
+        limiter.reset()
+        password = secrets.token_urlsafe(24)
+        with SessionLocal() as db:
+            users = [User(email=f'{uuid.uuid4()}@example.test',role=r,
+                          password_hash=hash_password(password)) for r in ['reception','practitioner']]
+            db.add_all(users)
+            db.commit()
+            provider_id, email = str(users[1].id), users[0].email
+        with TestClient(app) as c:
+            h = {'Authorization': 'Bearer '+c.post('/api/v1/auth/login',json={
+                'email':email,'password':password}).json()['access_token']}
+            p = c.post('/api/v1/patients',headers=h,json={'name':'เลื่อนนัดสมมติ','provider_id':provider_id}).json()
+            start = datetime.now(timezone.utc)+timedelta(days=3)
+            def data(offset):
+                return {'patient_id':p['id'],'request_id':str(uuid.uuid4()),
+                        'starts_at':(start+timedelta(hours=offset)).isoformat(),
+                        'ends_at':(start+timedelta(hours=offset+1)).isoformat()}
+            a = c.post('/api/v1/appointments',headers=h,json=data(0)).json()
+            b = c.post('/api/v1/appointments',headers=h,json=data(2)).json()
+            moved = {'starts_at':b['starts_at'],'ends_at':b['ends_at'],'resource_id':None,'expected_version':1}
+>           assert c.patch(f"/api/v1/appointments/{a['id']}",headers=h,json=moved).status_code == 409
+E           AssertionError: assert 404 == 409
+E            +  where 404 = <Response [404 Not Found]>.status_code
+E            +    where <Response [404 Not Found]> = patch('/api/v1/appointments/3d7be174-102c-4ae5-ab2f-fc6c94fee8f1', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MzE2NDUzMy04YjZkLTRmMmEtODBjMC05MTlmNjNhMmI...mV4cCI6MTc4OTM1NTk2OSwiaXNzIjoiY2xpbmljLWFwaSIsImF1ZCI6ImNsaW5pYy13ZWIifQ.mlrlqPF7RAHyNpAoZP5xuk5bm4_VXJvwufH2yPbpZqI'}, json={'ends_at': '2026-09-17T05:49:29.069304Z', 'expected_version': 1, 'resource_id': None, 'starts_at': '2026-09-17T04:49:29.069304Z'})
+E            +      where patch = <starlette.testclient.TestClient object at 0x105f23e10>.patch
+
+tests/acceptance/test_scheduling.py:126: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/acceptance/test_scheduling.py::test_reschedule_conflict_keeps_original
+1 failed, 3 warnings in 3.54s

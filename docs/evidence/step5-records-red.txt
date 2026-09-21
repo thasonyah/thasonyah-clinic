@@ -1,0 +1,44 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_records_scope_and_signed_immutability __________________
+
+    def test_records_scope_and_signed_immutability():
+        limiter.reset()
+        password = secrets.token_urlsafe(24)
+        with SessionLocal() as db:
+            users = [User(email=f'{uuid.uuid4()}@example.test', role=role,
+                          password_hash=hash_password(password))
+                     for role in ['reception', 'practitioner', 'practitioner', 'admin']]
+            db.add_all(users)
+            db.commit()
+            identities = [(str(u.id), u.email) for u in users]
+        with TestClient(app) as c:
+            headers = [{'Authorization': 'Bearer ' + c.post('/api/v1/auth/login', json={
+                'email': email, 'password': password}).json()['access_token']}
+                       for _, email in identities]
+            payload = {'name': 'ผู้ป่วยทดสอบ', 'birth_date': '1990-01-01',
+                       'provider_id': identities[1][0]}
+>           assert c.post('/api/v1/patients', headers=headers[3], json=payload).status_code == 403
+E           AssertionError: assert 404 == 403
+E            +  where 404 = <Response [404 Not Found]>.status_code
+E            +    where <Response [404 Not Found]> = post('/api/v1/patients', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmN2YyNTRlYy0xOTM4LTQ0ZGUtYmFiMS00ZjAyYmUyZTc...mV4cCI6MTc4OTIwODU4MiwiaXNzIjoiY2xpbmljLWFwaSIsImF1ZCI6ImNsaW5pYy13ZWIifQ.mpgpfe3g4aaN5aRbdXosbhZ6V6A36tHn_EKvhgI62_w'}, json={'birth_date': '1990-01-01', 'name': 'ผู้ป่วยทดสอบ', 'provider_id': 'e7eb5397-affe-49d3-8ceb-db5a255e1fee'})
+E            +      where post = <starlette.testclient.TestClient object at 0x107fdef50>.post
+
+tests/acceptance/test_records.py:29: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/acceptance/test_records.py::test_records_scope_and_signed_immutability
+1 failed, 3 warnings in 3.22s

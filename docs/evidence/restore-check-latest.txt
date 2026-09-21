@@ -1,0 +1,29 @@
+{
+  "source": "clinic_demo",
+  "restored_database": "clinic_restore_15258d54eca4_test",
+  "counts": {
+    "users": 6,
+    "login_sessions": 37,
+    "password_resets": 0,
+    "clinic_services": 12,
+    "resources": 1,
+    "patients": 5,
+    "visits": 10,
+    "visit_amendments": 0,
+    "consent_attachments": 1,
+    "appointments": 3,
+    "invoices": 2,
+    "payment_receipts": 2,
+    "payment_refunds": 1,
+    "cash_closes": 1,
+    "dispense_batches": 2,
+    "medicines": 2,
+    "stock_lots": 2,
+    "stock_movements": 5,
+    "prescriptions": 3,
+    "audit_events": 48,
+    "alembic_version": 1
+  },
+  "row_counts_match": true
+}
+Restore and table-count comparison passed. Restored DB retained for inspection.

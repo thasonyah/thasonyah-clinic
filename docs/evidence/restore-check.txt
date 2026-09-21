@@ -1,0 +1,20 @@
+{
+  "source": "clinic_demo",
+  "restored_database": "clinic_restore_74be42e35091_test",
+  "counts": {
+    "users": 6,
+    "patients": 3,
+    "visits": 4,
+    "visit_amendments": 0,
+    "appointments": 3,
+    "invoices": 1,
+    "medicines": 2,
+    "stock_lots": 2,
+    "stock_movements": 2,
+    "prescriptions": 1,
+    "audit_events": 1,
+    "alembic_version": 1
+  },
+  "row_counts_match": true
+}
+Restore and table-count comparison passed. Restored DB retained for inspection.

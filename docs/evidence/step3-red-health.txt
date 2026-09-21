@@ -1,0 +1,48 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________________ test_health_contract _____________________________
+
+    def test_health_contract():
+        async def check():
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://test"
+            ) as c:
+                response = await c.get("/api/v1/healthz")
+                assert response.status_code == 200
+                assert response.json() == {"status": "ok"}
+                ready = await c.get("/api/v1/readyz")
+                assert ready.status_code == 200
+                assert ready.json() == {"status": "ready"}
+
+>       asyncio.run(check())
+
+tests/integration/test_health.py:20:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/homebrew/Cellar/python@3.11/3.11.14_3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.14_3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.11/3.11.14_3/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    async def check():
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://test"
+        ) as c:
+            response = await c.get("/api/v1/healthz")
+            assert response.status_code == 200
+>           assert response.json() == {"status": "ok"}
+E           AssertionError: assert {'status': 'broken'} == {'status': 'ok'}
+E
+E             Differing items:
+E             {'status': 'broken'} != {'status': 'ok'}
+E             Use -v to get more diff
+
+tests/integration/test_health.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_health.py::test_health_contract - AssertionErro...
+1 failed in 0.77s
