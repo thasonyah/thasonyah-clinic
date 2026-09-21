@@ -1,0 +1,34 @@
+Zodiac / Thai traditional element logic check
+Date: 2026-09-21
+
+Implemented inputs and behavior:
+- Patient birth_date can now be converted automatically to Thai lunar month and waxing/waning phase.
+- Manual birth_lunar_month and birth_lunar_phase remain available as staff override fields.
+- gestation_months 1-12 enables conception month and conception element output.
+
+Lunar conversion source:
+- pythaidate==0.2.0, CsDate.from_julianday
+- The library documents Thai lunisolar calendar support plus limitations around intercalary-year conventions.
+
+Ruleset source:
+- /Users/mrz/Desktop/thai_traditional_birth_and_conception_elements_v2.md
+- Stored as ruleset id: thai-traditional-birth-and-conception-elements-v2
+
+Sample checked from user case:
+- Gregorian birth date: 1979-11-10 (10 พ.ย. 2522)
+- automatic lunar conversion: month 12, ข้างแรม, lunar day 6, ปีมะแม
+- gestation: 9 months
+
+Result:
+- birth element: ธาตุน้ำ / เตโชพิการ / กำเดาระคน
+- conception month: ((12 - 9 - 1) % 12) + 1 = 3
+- conception waxing: ธาตุดิน / วาโยพิการ / สุมนาวาตะระคน
+- conception waning: ธาตุดิน / อาโปพิการ / คูถเสมหะระคน
+
+Verification run:
+- backend/.venv ruff format/check: passed
+- backend alembic upgrade head: passed
+- backend records acceptance: 3 passed
+- backend full suite: 24 passed
+- frontend vitest: 2 passed
+- frontend production build: passed

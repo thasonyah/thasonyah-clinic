@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0 -- /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/mrz/Desktop/Work Hub/Code for Ai/backend
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.3.0, anyio-4.15.1
+collecting ... collected 3 items
+
+tests/integration/test_health.py::test_health_contract PASSED            [ 33%]
+tests/unit/test_config.py::test_rejects_non_postgres PASSED              [ 66%]
+tests/unit/test_config.py::test_normalizes_postgres_driver PASSED        [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.14-final-0 _______________
+
+Name                       Stmts   Miss  Cover   Missing
+--------------------------------------------------------
+app/__init__.py                0      0   100%
+app/config.py                 27      1    96%   25
+app/database.py               10      0   100%
+app/deps.py                    1      0   100%
+app/main.py                   12      0   100%
+app/models/__init__.py         0      0   100%
+app/routers/__init__.py        0      0   100%
+app/routers/health.py         15      0   100%
+app/schemas/__init__.py        0      0   100%
+app/schemas/health.py          3      0   100%
+app/services/__init__.py       0      0   100%
+app/services/health.py        10      3    70%   9-11
+--------------------------------------------------------
+TOTAL                         78      4    95%
+============================== 3 passed in 0.67s ===============================

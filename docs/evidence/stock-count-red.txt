@@ -1,0 +1,47 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_count_is_idempotent_and_rejects_stale_quantity ______________
+
+    def test_count_is_idempotent_and_rejects_stale_quantity():
+        limiter.reset()
+        password=secrets.token_urlsafe(24)
+        with SessionLocal() as db:
+            u=User(email=f'{uuid.uuid4()}@example.test',role='pharmacy',password_hash=hash_password(password))
+            db.add(u)
+            db.commit()
+            email=u.email
+        with TestClient(app) as c:
+            h={'Authorization':'Bearer '+c.post('/api/v1/auth/login',json={'email':email,'password':password}).json()['access_token']}
+            med=c.post('/api/v1/medicines',headers=h,json={'name':str(uuid.uuid4()),'unit':'หน่วย'}).json()
+            lot=c.post('/api/v1/lots',headers=h,json={'medicine_id':med['id'],'lot_number':str(uuid.uuid4()),'expires_on':str(date.today()+timedelta(days=90)),'quantity':10}).json()
+            url=f"/api/v1/lots/{lot['id']}/adjust"
+            payload={'request_id':str(uuid.uuid4()),'expected_quantity':10,'quantity':7,'kind':'count','reason':'ตรวจนับทดสอบ'}
+            def adjust(data):
+                with TestClient(app) as client:
+                    return client.post(url,headers=h,json=data)
+            with ThreadPoolExecutor(2) as pool:
+                result=list(pool.map(adjust,[payload,{**payload,'request_id':str(uuid.uuid4()),'quantity':6}]))
+>           assert sorted(r.status_code for r in result)==[200,409]
+E           assert [404, 404] == [200, 409]
+E             
+E             At index 0 diff: 404 != 200
+E             Use -v to get more diff
+
+tests/acceptance/test_stock_count.py:34: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/acceptance/test_stock_count.py::test_count_is_idempotent_and_rejects_stale_quantity
+1 failed, 3 warnings in 2.04s

@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_invoice_snapshot_concurrent_payment_and_refund ______________
+
+    def test_invoice_snapshot_concurrent_payment_and_refund():
+        limiter.reset()
+        password=secrets.token_urlsafe(24)
+        with SessionLocal() as db:
+            users=[User(email=f'{uuid.uuid4()}@example.test',role=r,password_hash=hash_password(password))
+                   for r in ['reception','practitioner','admin','finance','manager']]
+            db.add_all(users);db.commit()
+            ids=[str(u.id) for u in users];emails=[u.email for u in users]
+        with TestClient(app) as c:
+            h=[{'Authorization':'Bearer '+c.post('/api/v1/auth/login',json={
+                'email':e,'password':password}).json()['access_token']} for e in emails]
+            p=c.post('/api/v1/patients',headers=h[0],json={'name':'ใบรับเงินสมมติ','provider_id':ids[1]}).json()
+            v=c.post(f"/api/v1/patients/{p['id']}/visits",headers=h[1],json={'chief_complaint':'ทดสอบ'}).json()
+            c.post(f"/api/v1/visits/{v['id']}/sign",headers=h[1],json={'expected_version':1})
+            s=c.post('/api/v1/services',headers=h[2],json={'name':str(uuid.uuid4()),'price':'125.50','minutes':30}).json()
+            data={'visit_id':v['id'],'items':[{'service_id':s['id'],'quantity':2}]}
+            invoice=c.post('/api/v1/invoices',headers=h[1],json=data)
+>           assert invoice.status_code==201
+E           assert 404 == 201
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/acceptance/test_billing.py:31: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854
+  /Users/mrz/Desktop/Work Hub/Code for Ai/backend/.venv/lib/python3.11/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13
+    from crypt import crypt as _crypt
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/acceptance/test_billing.py::test_invoice_snapshot_concurrent_payment_and_refund
+1 failed, 3 warnings in 4.23s
