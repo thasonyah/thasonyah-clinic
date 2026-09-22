@@ -1,8 +1,8 @@
 # บัญชีผู้ดูแลและการรีเซ็ตทางอีเมล
 
-13 กันยายน 2569
+22 กันยายน 2569
 
-ผู้ใช้ยืนยัน thasonyahclinic@gmail.com เป็นบัญชีผู้ดูแลคลินิก สร้างในฐาน local แล้ว (ไม่ใช่ production) รหัสเริ่มต้นสุ่มใหม่ เก็บ bcrypt ในฐานข้อมูลและส่งมอบผ่านไฟล์ส่วนตัวนอก repository ไม่บันทึกรหัสผ่านในเอกสารนี้
+ผู้ใช้ยืนยัน thasonyahclinic@gmail.com เป็นบัญชีผู้ดูแลคลินิก รหัสผ่านเก็บแบบ bcrypt ในฐานข้อมูล ไม่บันทึกรหัสผ่านหรือ API key ในเอกสารนี้
 
 ## ฟังก์ชัน
 
@@ -28,19 +28,24 @@
 
 ```text
 RESEND_API_KEY=<Resend API key>
-RESET_EMAIL_FROM=<verified sender เช่น noreply@โดเมนที่ยืนยันใน Resend>
+RESET_EMAIL_FROM=onboarding@resend.dev  # ใช้ชั่วคราวจนกว่าจะ verify domain ของคลินิกใน Resend
 RESET_PUBLIC_URL=https://clinic-web-3z3c.onrender.com/staff
 ```
 
 ไม่ต้องใส่สามค่านี้ใน `clinic-web` เพราะ frontend เรียก API และ API เป็นผู้ส่งอีเมลจริง
 
-HTTP adapter ใช้ Resend โดยยังไม่มีการเปิดบัญชีหรือส่งอีเมลจริง เอกสาร API: https://resend.com/docs/api-reference/emails/send-email
+สถานะ production ล่าสุด: `clinic-api` ตั้งค่า Resend แล้ว ทดสอบ `/api/v1/auth/forgot-password` ได้ `202 Accepted` และ log ไม่มี `Password reset email delivery failed` หลังเปลี่ยน `RESET_EMAIL_FROM` เป็น `onboarding@resend.dev`
+
+Resend ไม่อนุญาตให้ใช้ `thasonyahclinic@gmail.com` เป็นผู้ส่งโดยตรง เพราะโดเมน `gmail.com` ไม่ได้ verify กับบัญชีนี้ หากต้องการผู้ส่งถาวรของคลินิกให้เพิ่มและยืนยันโดเมนใน Resend ก่อน แล้วค่อยเปลี่ยนเป็นเช่น `noreply@โดเมนคลินิก` หรือ `contact@โดเมนคลินิก`
+
+HTTP adapter ใช้ Resend เอกสาร API: https://resend.com/docs/api-reference/emails/send-email
 สามารถเปลี่ยน adapter หากคลินิกมีผู้ให้บริการเดิม โดยไม่เปลี่ยน flow หรือฐานข้อมูล
 
-ต้องใส่สามค่านี้และทดสอบรับเมลจริงก่อนถือว่าการส่งอีเมลพร้อมใช้งาน Background task ปัจจุบันไม่ใช่ durable mail queue หาก worker หยุดระหว่างส่งให้ขอลิงก์ใหม่ ไม่มีการอ้างว่าส่งสำเร็จแน่นอนจากเพียงการรับคำขอ
+ต้องใส่สามค่านี้และทดสอบรับเมลจริงก่อนถือว่าการส่งอีเมลพร้อมใช้งานเต็มรูปแบบ Background task ปัจจุบันไม่ใช่ durable mail queue หาก worker หยุดระหว่างส่งให้ขอลิงก์ใหม่ ไม่มีการอ้างว่าส่งสำเร็จแน่นอนจากเพียงการรับคำขอ
 
 ## หลักฐาน
 
-pytest รวม 12 tests ผ่าน 94% ของโค้ดปัจจุบัน (ไม่ใช่ coverage ทั้งโครงการ)
+pytest รวม 12 tests ผ่าน 94% ของโค้ดชุด password reset ตอนพัฒนา (ไม่ใช่ coverage ทั้งโครงการ)
 ทดสอบ single use, session revoke, รหัสเก่าเข้าไม่ได้/ใหม่เข้าได้, expired/invalid token, missing email config และสองคำขอพร้อมกันสำเร็จหนึ่งครั้ง โดย mock ผู้ส่งเพื่อไม่ส่งเมลจริง
+Production smoke test วันที่ 22 กันยายน 2569: `https://clinic-api-rl26.onrender.com/api/v1/readyz` ได้ 200, `POST /api/v1/auth/forgot-password` สำหรับบัญชีผู้ดูแลได้ 202, log ไม่มี delivery failure หลังใช้ sender `onboarding@resend.dev`
 Build frontend ผ่าน; ไม่มีการกรอกรหัสผ่านใหม่ของผู้ใช้ผ่านเครื่องมือ browser
