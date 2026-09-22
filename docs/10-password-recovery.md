@@ -17,11 +17,22 @@
 
 ## ตั้งค่าการส่งจริง
 
-ตั้งใน .env หรือ Render environment เท่านั้น:
+ตั้งใน `.env` ตอนพัฒนา หรือ Render Environment ของ service `clinic-api` เท่านั้น:
 
 - RESEND_API_KEY — key สำหรับส่งอีเมล
 - RESET_EMAIL_FROM — อีเมลจากโดเมนผู้ส่งที่ยืนยันแล้ว
-- RESET_PUBLIC_URL — HTTPS URL ของ frontend เช่น https://clinic.example/staff ไม่มี query/fragment
+- RESET_PUBLIC_URL — HTTPS URL ของ frontend เช่น https://clinic-web-3z3c.onrender.com/staff ไม่มี query/fragment
+
+
+สำหรับ production บน Render ชุดนี้ต้องอยู่ที่ `clinic-api`:
+
+```text
+RESEND_API_KEY=<Resend API key>
+RESET_EMAIL_FROM=<verified sender เช่น noreply@โดเมนที่ยืนยันใน Resend>
+RESET_PUBLIC_URL=https://clinic-web-3z3c.onrender.com/staff
+```
+
+ไม่ต้องใส่สามค่านี้ใน `clinic-web` เพราะ frontend เรียก API และ API เป็นผู้ส่งอีเมลจริง
 
 HTTP adapter ใช้ Resend โดยยังไม่มีการเปิดบัญชีหรือส่งอีเมลจริง เอกสาร API: https://resend.com/docs/api-reference/emails/send-email
 สามารถเปลี่ยน adapter หากคลินิกมีผู้ให้บริการเดิม โดยไม่เปลี่ยน flow หรือฐานข้อมูล

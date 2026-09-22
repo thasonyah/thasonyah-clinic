@@ -20,6 +20,12 @@ services:
         generateValue: true
       - key: CORS_ORIGINS
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESET_EMAIL_FROM
+        sync: false
+      - key: RESET_PUBLIC_URL
+        sync: false
   - type: web
     name: clinic-web
     runtime: static
