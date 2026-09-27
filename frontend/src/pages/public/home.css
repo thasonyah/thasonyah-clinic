@@ -171,8 +171,18 @@
 
 .primary-link {
   background: var(--primary);
-  color: white;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   box-shadow: 0 18px 38px rgba(44, 57, 141, 0.22);
+}
+
+.primary-link:visited,
+.primary-link:hover,
+.primary-link:focus-visible,
+.primary-link:active,
+.booking-submit {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
 }
 
 .primary-link:hover {
