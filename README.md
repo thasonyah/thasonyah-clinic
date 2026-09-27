@@ -122,3 +122,4 @@ Backend และ staff UI รองรับ login/logout/me/change-password/re
 - [ความคืบหน้าทะเบียน/OPD](docs/09-records-progress.md)
 - [รายการหัตถการและบริการ](docs/08-live-services.md)
 - [กฎจักรราศี/ธาตุ](docs/06-zodiac-reference.md)
+- [คู่มือใช้งานระบบคลินิก](docs/13-user-guide.md)
