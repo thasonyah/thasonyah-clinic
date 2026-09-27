@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FC Vision";
+  src: url("/fonts/fc-vision/FCVision-ExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-main: "FC Vision", Thonburi, "Noto Sans Thai", Tahoma, sans-serif;
+}
+
+html,
+body,
+#root {
+  font-family: var(--font-main);
+}
+

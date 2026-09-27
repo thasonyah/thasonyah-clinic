@@ -12,11 +12,7 @@
     radial-gradient(circle at top right, rgba(44, 57, 141, 0.13), transparent 34rem),
     linear-gradient(180deg, #fffaf2 0%, var(--paper) 52%, #ffffff 100%);
   color: var(--ink);
-  font:
-    16px/1.7 Thonburi,
-    "Noto Sans Thai",
-    Tahoma,
-    sans-serif;
+  font: 16px/1.7 var(--font-main);
 }
 
 .public-home * {

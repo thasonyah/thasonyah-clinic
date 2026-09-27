@@ -9,11 +9,7 @@
   min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
-  font:
-    15px/1.65 Thonburi,
-    "Noto Sans Thai",
-    Tahoma,
-    sans-serif;
+  font: 15px/1.65 var(--font-main);
 }
 .clinic-preview * {
   box-sizing: border-box;
