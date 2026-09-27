@@ -74,3 +74,68 @@ def test_public_booking_request_is_visible_to_reception():
         assert changed.status_code == 200
         assert changed.json()["status"] == "contacted"
     limiter.reset()
+
+
+def test_reception_confirms_public_booking_into_patient_and_appointment():
+    limiter.reset()
+    password = secrets.token_urlsafe(24)
+    with SessionLocal() as db:
+        reception = User(
+            email=f"{uuid.uuid4()}@example.test",
+            role="reception",
+            password_hash=hash_password(password),
+        )
+        practitioner = User(
+            email=f"{uuid.uuid4()}@example.test",
+            role="practitioner",
+            password_hash=hash_password(secrets.token_urlsafe(24)),
+        )
+        service = ClinicService(name=str(uuid.uuid4()), price="650.00", minutes=60, active=True)
+        db.add_all([reception, practitioner, service])
+        db.commit()
+        reception_email = reception.email
+        practitioner_id = str(practitioner.id)
+        service_id = str(service.id)
+
+    start = _next_open_start() + timedelta(hours=1)
+    with TestClient(app) as c:
+        booking = c.post(
+            "/api/v1/public/bookings",
+            json={
+                "request_id": str(uuid.uuid4()),
+                "full_name": "คนไข้ยืนยันนัด",
+                "phone": "0822035331",
+                "line_id": "patient-confirm",
+                "service_id": service_id,
+                "preferred_starts_at": start.isoformat(),
+                "preferred_ends_at": (start + timedelta(minutes=60)).isoformat(),
+                "note": "ต้องการยืนยันนัด",
+            },
+        )
+        assert booking.status_code == 201
+        headers = {
+            "Authorization": "Bearer "
+            + c.post(
+                "/api/v1/auth/login", json={"email": reception_email, "password": password}
+            ).json()["access_token"]
+        }
+
+        confirmed = c.post(
+            f"/api/v1/booking-requests/{booking.json()['id']}/confirm",
+            headers=headers,
+            json={"provider_id": practitioner_id, "expected_version": 1},
+        )
+        assert confirmed.status_code == 200
+        body = confirmed.json()
+        assert body["booking_request"]["status"] == "booked"
+        assert body["patient"]["name"] == "คนไข้ยืนยันนัด"
+        assert body["patient"]["phone"] == "0822035331"
+        assert body["patient"]["provider_id"] == practitioner_id
+        assert body["appointment"]["patient_id"] == body["patient"]["id"]
+        assert body["appointment"]["patient_name"] == "คนไข้ยืนยันนัด"
+        assert body["appointment"]["starts_at"] == start.isoformat()
+
+        appointments = c.get("/api/v1/appointments", headers=headers, params={"day": start.date()})
+        assert appointments.status_code == 200
+        assert any(item["id"] == body["appointment"]["id"] for item in appointments.json())
+    limiter.reset()

@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.database import get_session
 from app.deps import public_access, require_roles
 from app.schemas.public import (
+    BookingRequestConfirm,
+    BookingRequestConfirmOutput,
     BookingRequestInput,
     BookingRequestOutput,
     BookingRequestStatus,
@@ -58,3 +60,13 @@ def update_request_status(
     db: Session = Depends(get_session),
 ):
     return public_booking.change_booking_status(db, booking_id, payload)
+
+
+@booking_router.post("/{booking_id}/confirm", response_model=BookingRequestConfirmOutput)
+def confirm_request(
+    booking_id: uuid.UUID,
+    payload: BookingRequestConfirm,
+    user=Depends(require_roles("reception", "manager", "admin")),
+    db: Session = Depends(get_session),
+):
+    return public_booking.confirm_booking_request(db, user, booking_id, payload)

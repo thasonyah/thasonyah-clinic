@@ -4,7 +4,8 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.records import VersionInput
+from app.schemas.records import PatientOutput, VersionInput
+from app.schemas.scheduling import AppointmentOutput
 
 
 class PublicServiceOutput(BaseModel):
@@ -45,3 +46,14 @@ class BookingRequestOutput(BookingRequestInput):
 
 class BookingRequestStatus(VersionInput):
     status: Literal["contacted", "cancelled"]
+
+
+class BookingRequestConfirm(VersionInput):
+    provider_id: uuid.UUID
+    resource_id: uuid.UUID | None = None
+
+
+class BookingRequestConfirmOutput(BaseModel):
+    booking_request: BookingRequestOutput
+    patient: PatientOutput
+    appointment: AppointmentOutput

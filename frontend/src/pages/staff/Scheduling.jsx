@@ -29,6 +29,7 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
   const [day, setDay] = useState(bangkokDate),
     [appointments, setAppointments] = useState([]),
     [patients, setPatients] = useState([]),
+    [providers, setProviders] = useState([]),
     [resources, setResources] = useState([]),
     [bookingRequests, setBookingRequests] = useState([]);
   const [name, setName] = useState(""),
@@ -86,6 +87,9 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
       ]);
       setAppointments(appointmentsResponse.data);
       setBookingRequests(bookingRequestsResponse.data);
+      if (user.role === "reception") {
+        setProviders((await api.get("/patients/providers", config)).data);
+      }
     }
   };
   const search = async () =>
@@ -387,7 +391,7 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
                           {request.line_id ? ` · LINE ${request.line_id}` : ""}
                         </p>
                         <p>
-                          สถานะ {request.status === "pending" ? "รอติดต่อ" : request.status === "contacted" ? "ติดต่อแล้ว" : "ยกเลิก"}
+                          สถานะ {request.status === "pending" ? "รอติดต่อ" : request.status === "contacted" ? "ติดต่อแล้ว" : request.status === "booked" ? "นัดหมายแล้ว" : "ยกเลิก"}
                           {request.note ? ` · ${request.note}` : ""}
                         </p>
                       </div>
@@ -412,7 +416,28 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
                               ติดต่อแล้ว
                             </button>
                           )}
-                          {request.status !== "cancelled" && (
+                          {request.status !== "booked" && (
+                            <ConfirmBookingForm
+                              request={request}
+                              providers={providers}
+                              resources={resources}
+                              busy={busy}
+                              onConfirm={(payload) =>
+                                run(async () => {
+                                  const response = await api.post(
+                                    `/booking-requests/${request.id}/confirm`,
+                                    payload,
+                                    config,
+                                  );
+                                  await load();
+                                  setMessage(
+                                    `สร้างนัดของ ${response.data.patient.name} จากคำขอหน้าเว็บแล้ว`,
+                                  );
+                                })
+                              }
+                            />
+                          )}
+                          {request.status !== "cancelled" && request.status !== "booked" && (
                             <button
                               className="secondary"
                               disabled={busy}
@@ -530,6 +555,63 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
         )}
       </fieldset>
     </section>
+  );
+}
+
+function ConfirmBookingForm({ request, providers, resources, busy, onConfirm }) {
+  const [provider, setProvider] = useState("");
+  const [resource, setResource] = useState("");
+  const providerId = provider || providers[0]?.id || "";
+  return (
+    <form
+      className="booking-confirm-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!providerId) return;
+        onConfirm({
+          provider_id: providerId,
+          resource_id: resource || null,
+          expected_version: request.version,
+        });
+      }}
+    >
+      <label className="field">
+        ผู้รักษา
+        <select
+          required
+          value={providerId}
+          onChange={(event) => setProvider(event.target.value)}
+          disabled={busy || !providers.length}
+        >
+          {!providers.length && <option value="">ยังไม่มีผู้รักษาที่เปิดใช้งาน</option>}
+          {providers.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.email}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        ห้อง / เตียง
+        <select
+          value={resource}
+          onChange={(event) => setResource(event.target.value)}
+          disabled={busy}
+        >
+          <option value="">ไม่ใช้ห้อง/เตียงร่วม</option>
+          {resources
+            .filter((item) => item.active)
+            .map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+        </select>
+      </label>
+      <button className="primary" disabled={busy || !providerId}>
+        สร้างนัดจากคำขอ
+      </button>
+    </form>
   );
 }
 

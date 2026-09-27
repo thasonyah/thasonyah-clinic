@@ -2,11 +2,15 @@ from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.models.catalog import ClinicService
-from app.models.scheduling import BookingRequest
+from app.models.identity import User
+from app.models.records import Patient
+from app.models.scheduling import Appointment, BookingRequest, Resource
+from app.services.audit import record
+from app.services.scheduling import output as appointment_output
 
 BANGKOK = ZoneInfo("Asia/Bangkok")
 OPEN_WEEKDAYS = {0, 4, 5, 6}  # Monday, Friday, Saturday, Sunday
@@ -102,3 +106,91 @@ def change_booking_status(db, request_id, payload):
         raise HTTPException(409, "Booking request changed; reload")
     db.commit()
     return db.get(BookingRequest, request_id)
+
+
+def confirm_booking_request(db, user, request_id, payload):
+    request = db.scalar(
+        select(BookingRequest).where(BookingRequest.id == request_id).with_for_update()
+    )
+    if not request:
+        raise HTTPException(404, "Booking request not found")
+    if request.version != payload.expected_version:
+        raise HTTPException(409, "Booking request changed; reload")
+    if request.status == "cancelled":
+        raise HTTPException(409, "Cancelled request cannot be confirmed")
+
+    provider = db.scalar(select(User).where(User.id == payload.provider_id).with_for_update())
+    if not provider or not provider.active or provider.role != "practitioner":
+        raise HTTPException(422, "Choose an active practitioner")
+
+    existing_appointment = db.scalar(
+        select(Appointment).where(Appointment.request_id == request.request_id).limit(1)
+    )
+    existing_patient = None
+    if existing_appointment:
+        existing_patient = db.get(Patient, existing_appointment.patient_id)
+        if request.status != "booked":
+            request.status = "booked"
+            request.version += 1
+            record(db, user, "booking_request.confirm", request.id)
+            db.commit()
+        return {
+            "booking_request": request,
+            "patient": existing_patient,
+            "appointment": appointment_output(db, existing_appointment),
+        }
+
+    resource = None
+    resource_filters = [Appointment.provider_id == provider.id]
+    if payload.resource_id:
+        resource = db.scalar(
+            select(Resource).where(Resource.id == payload.resource_id).with_for_update()
+        )
+        if not resource or not resource.active:
+            raise HTTPException(422, "Resource unavailable")
+        resource_filters.append(Appointment.resource_id == resource.id)
+
+    conflict = db.scalar(
+        select(Appointment.id)
+        .where(
+            or_(*resource_filters),
+            Appointment.status != "cancelled",
+            Appointment.starts_at < request.preferred_ends_at,
+            Appointment.ends_at > request.preferred_starts_at,
+        )
+        .limit(1)
+    )
+    if conflict:
+        raise HTTPException(409, "Practitioner or resource already booked")
+
+    patient = Patient(
+        name=request.full_name,
+        phone=request.phone,
+        provider_id=provider.id,
+        created_by=user.id,
+    )
+    db.add(patient)
+    db.flush()
+    record(db, user, "patient.create", patient.id)
+
+    appointment = Appointment(
+        request_id=request.request_id,
+        patient_id=patient.id,
+        provider_id=provider.id,
+        resource_id=resource.id if resource else None,
+        starts_at=request.preferred_starts_at,
+        ends_at=request.preferred_ends_at,
+        created_by=user.id,
+    )
+    db.add(appointment)
+    db.flush()
+    request.status = "booked"
+    request.version += 1
+    record(db, user, "appointment.create", appointment.id)
+    record(db, user, "booking_request.confirm", request.id)
+    db.commit()
+    return {
+        "booking_request": request,
+        "patient": patient,
+        "appointment": appointment_output(db, appointment),
+    }
