@@ -1,24 +1,35 @@
-# ตรวจความพร้อมระบบ — 15 กันยายน 2026
+# ตรวจความพร้อมระบบ — 27 กันยายน 2026
 
 ## ผลรอบล่าสุด
 
-- แก้ BodyMap อ้างตัวแปร disabled ที่ยังไม่ได้ประกาศ ซึ่งทำให้เพิ่มจุดปวดไม่ได้
-- อัปเดตฐานข้อมูล clinic_local, clinic_demo และ clinic_auth_test ถึง migration 0017
-- Ruff ผ่าน; frontend tests 2 รายการและ production build ผ่าน
-- Backend full suite ผ่าน 24 tests หลังเพิ่มจักรราศีพื้นฐาน ดู evidence/zodiac-logic-latest.txt และ operations-full-latest.txt
-- สำรองและกู้คืนฐานข้อมูลสาธิตลงฐานข้อมูลใหม่ ผ่านการเทียบจำนวนแถว 21 ตาราง รวม consent_attachments, payment_receipts, payment_refunds, cash_closes และ dispense_batches
-- เปิด backend และ frontend ชุดสาธิตใหม่เพื่อใช้โค้ดล่าสุด
-- Browser QA รอบล่าสุดผ่าน flow รับเงินบางส่วน คืนเงินบางส่วน ใบรับเงิน/ใบคืนเงินแบบพิมพ์ได้ ปิดยอดเงินสด แนบเอกสารยินยอม จ่ายยาบางส่วน ตรวจนับล็อต mobile viewport ของหน้าหลักเหล่านี้ และ session หมดอายุระหว่างกรอก ดู browser-qa-latest.md และภาพ qa-*-latest.png ใน docs/design-preview
+- GitHub repository production ใช้ `https://github.com/thasonyah/thasonyah-clinic` และ Render deploy จาก branch `main`
+- Backend API `https://clinic-api-rl26.onrender.com/api/v1` deploy commit `401f9cc` แล้ว และ readiness endpoint ตอบ `{"status":"ready"}`
+- Frontend `https://clinic-web-3z3c.onrender.com/` deploy commit `401f9cc` แล้ว โดยหน้า Render ระบุ `Last successfully deployed commit` เป็น commit เดียวกัน
+- เพิ่ม flow ให้ Reception ยืนยันคำขอจองจากหน้าเว็บเป็นคนไข้และนัดหมายจริงใน staff scheduling โดยเลือกผู้รักษาและทรัพยากรได้
+- Build/verification ล่าสุด: frontend production build ผ่าน, vitest ผ่าน, ruff เฉพาะไฟล์ที่แก้ผ่าน, backend app import ผ่าน
+- Local acceptance pytest ของ public booking ยังไม่ได้รันผ่านในเครื่องนี้เพราะ PostgreSQL local ที่ config ไว้ไม่ตอบสนอง; ไม่พบหลักฐานว่าเกิดจากโค้ดใหม่
 
 ## ขอบเขตหลักฐาน
 
-ผล API tests ไม่เท่ากับการทดสอบหน้าจอครบทุกขั้นตอน Browser QA ล่าสุดครอบคลุม flow หลักของการเงินและเภสัชกรรมบน desktop และ mobile viewport ที่สำคัญ รวมถึง session หมดอายุระหว่างกรอก การตรวจจำนวนแถวหลัง restore ไม่ได้พิสูจน์ความเท่ากันของข้อมูลทุกคอลัมน์
+การตรวจ production รอบนี้ยืนยันว่า API พร้อมใช้งานและ frontend bundle มีข้อความ/endpoint ของ flow “สร้างนัดจากคำขอ” แล้ว แต่ยังไม่ได้สร้างข้อมูลคนไข้สมมติบน production เพื่อหลีกเลี่ยงการปนข้อมูลทดสอบกับระบบจริง
 
-## ยังต้องทำก่อนเปิดใช้งานจริง
+Browser QA เดิมครอบคลุม flow หลักของการเงินและเภสัชกรรมบน desktop/mobile รวมถึง session หมดอายุระหว่างกรอก ดู `docs/evidence/browser-qa-latest.md` และภาพ `docs/design-preview/qa-*-latest.png` ส่วนผล API tests เดิมไม่แทนการทดสอบหน้าจอครบทุกบทบาทบน production
 
-1. ตรวจรับกฎจันทรคติอัตโนมัติในเคสอธิกมาส/อธิกวารเพิ่มเติม; ตอนนี้ระบบแปลงวันเกิดเป็นเดือนจันทรคติ/ข้างขึ้นแรมอัตโนมัติ และคำนวณธาตุจากเดือนในครรภ์ได้แล้ว
-2. เชื่อม GitHub บัญชี thasonyah และ repository ที่ผู้ใช้เลือก
-3. ตั้งค่า Render อีเมล สำรองข้อมูลตามรอบ และตรวจระบบที่ deploy จริง
-4. ทดลองงานครบทุกบทบาทด้วยข้อมูลสมมติ และทำคู่มือส่งมอบ
+## สิ่งที่ทำเสร็จแล้วระดับ production
 
-ยังไม่ถือว่าระบบ Full Function เสร็จหรือผ่านการรับรองพร้อมใช้กับข้อมูลคนไข้จริง
+1. Repository และ Render เชื่อมกับบัญชี/โปรเจกต์ที่ผู้ใช้เลือก
+2. Public landing page แสดงข้อมูลคลินิกจริง เบอร์โทร LINE ที่อยู่ แผนที่ เวลาเปิด และรายการบริการ
+3. Public booking request บันทึกคำขอจอง และ staff สามารถยืนยันเป็น patient + appointment ได้
+4. Staff authentication, password reset flow, admin user management, patient records, OPD, scheduling, service catalog, pharmacy, billing, receipts/refunds, cash close และ consent attachment มีโค้ดและหลักฐานทดสอบระดับระบบแล้ว
+5. ฟอนต์ FC Vision ถูกใช้เป็นฟอนต์หลัก และแก้ปุ่มพื้นสีทึบให้ตัวอักษรอ่านได้บน production แล้ว
+
+## ยังต้องทำก่อนเปิดใช้งานจริงกับข้อมูลคนไข้จริง
+
+1. ทดสอบ production smoke test ด้วยข้อมูลสมมติหนึ่งชุดในเวลาที่คลินิกยอมรับ แล้วลบ/ทำเครื่องหมายข้อมูลทดสอบหลังตรวจครบ flow
+2. ตรวจรับกฎจันทรคติ/จักรราศีในเคสอธิกมาสและอธิกวารเพิ่มเติมกับผู้เชี่ยวชาญ ก่อนใช้ผลอัตโนมัติเป็นข้อมูลประกอบเวชระเบียนจริง
+3. ตั้งและทดสอบนโยบาย backup/restore บน Render production database ตามรอบที่คลินิกต้องการ
+4. ทดสอบส่ง reset email จริงจาก domain/อีเมลที่ตั้งค่าไว้ และตรวจ spam/deliverability
+5. ทำคู่มือใช้งานรายบทบาทและคู่มือผู้ดูแลระบบฉบับส่งมอบ พร้อมขั้นตอนกรณีระบบล่ม/คืนข้อมูล
+6. กำหนดนโยบายสิทธิ์ใช้งานจริงของคลินิก เช่น ใครเป็นแอดมิน ผู้รักษา reception และสิทธิ์ดูข้อมูลคนไข้ข้ามเคส
+
+ระบบพร้อมสำหรับการตรวจรับรอบ production smoke test แต่ยังไม่ควรเปิดรับข้อมูลคนไข้จริงจนกว่าจะปิดรายการข้างต้น
