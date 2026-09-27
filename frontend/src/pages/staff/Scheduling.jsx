@@ -29,7 +29,8 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
   const [day, setDay] = useState(bangkokDate),
     [appointments, setAppointments] = useState([]),
     [patients, setPatients] = useState([]),
-    [resources, setResources] = useState([]);
+    [resources, setResources] = useState([]),
+    [bookingRequests, setBookingRequests] = useState([]);
   const [name, setName] = useState(""),
     [query, setQuery] = useState(""),
     [draft, setDraft] = useState({
@@ -78,10 +79,14 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
   };
   const load = async () => {
     setResources((await api.get("/resources", config)).data);
-    if (user.role !== "admin")
-      setAppointments(
-        (await api.get("/appointments", { ...config, params: { day } })).data,
-      );
+    if (user.role !== "admin") {
+      const [appointmentsResponse, bookingRequestsResponse] = await Promise.all([
+        api.get("/appointments", { ...config, params: { day } }),
+        api.get("/booking-requests", { ...config, params: { day } }),
+      ]);
+      setAppointments(appointmentsResponse.data);
+      setBookingRequests(bookingRequestsResponse.data);
+    }
   };
   const search = async () =>
     setPatients(
@@ -357,6 +362,81 @@ export default function Scheduling({ token, user, onError, onDirty, onBusy }) {
                   </div>
                 </form>
               </details>
+            )}
+
+            {bookingRequests.length > 0 && (
+              <section className="panel form-panel">
+                <h3>คำขอจองจากหน้าเว็บ</h3>
+                <p className="subtle">รายการนี้ยังไม่ใช่นัดหมายจริง เจ้าหน้าที่ต้องติดต่อยืนยันและสร้างนัดในระบบภายใน</p>
+                <ul className="service-list">
+                  {bookingRequests.map((request) => (
+                    <li key={request.id}>
+                      <div>
+                        <strong>
+                          {new Date(request.preferred_starts_at).toLocaleString("th-TH", {
+                            timeZone: "Asia/Bangkok",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })} · {request.full_name}
+                        </strong>
+                        <p>
+                          {request.service_name} · โทร {request.phone}
+                          {request.line_id ? ` · LINE ${request.line_id}` : ""}
+                        </p>
+                        <p>
+                          สถานะ {request.status === "pending" ? "รอติดต่อ" : request.status === "contacted" ? "ติดต่อแล้ว" : "ยกเลิก"}
+                          {request.note ? ` · ${request.note}` : ""}
+                        </p>
+                      </div>
+                      {user.role === "reception" && (
+                        <div className="form-actions">
+                          {request.status === "pending" && (
+                            <button
+                              className="primary"
+                              disabled={busy}
+                              onClick={() =>
+                                run(async () => {
+                                  await api.patch(
+                                    `/booking-requests/${request.id}/status`,
+                                    { status: "contacted", expected_version: request.version },
+                                    config,
+                                  );
+                                  await load();
+                                  setMessage("อัปเดตคำขอจองแล้ว");
+                                })
+                              }
+                            >
+                              ติดต่อแล้ว
+                            </button>
+                          )}
+                          {request.status !== "cancelled" && (
+                            <button
+                              className="secondary"
+                              disabled={busy}
+                              onClick={() =>
+                                run(async () => {
+                                  await api.patch(
+                                    `/booking-requests/${request.id}/status`,
+                                    { status: "cancelled", expected_version: request.version },
+                                    config,
+                                  );
+                                  await load();
+                                  setMessage("ยกเลิกคำขอจองแล้ว");
+                                })
+                              }
+                            >
+                              ยกเลิกคำขอ
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
             {moving && (
               <RescheduleForm

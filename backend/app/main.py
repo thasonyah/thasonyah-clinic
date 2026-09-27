@@ -17,6 +17,7 @@ from app.routers.lots import router as lots_router
 from app.routers.medicines import router as medicines_router
 from app.routers.patients import router as patients_router
 from app.routers.prescriptions import router as prescriptions_router
+from app.routers.public import booking_router, public_router
 from app.routers.reports import router as reports_router
 from app.routers.resources import router as resources_router
 from app.routers.users import router as users_router
@@ -59,6 +60,8 @@ async def validation_error(request, exc):
 
 
 app.include_router(catalog_router, prefix="/api/v1")
+app.include_router(public_router, prefix="/api/v1")
+app.include_router(booking_router, prefix="/api/v1")
 
 
 app.include_router(patients_router, prefix="/api/v1")

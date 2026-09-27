@@ -27,3 +27,22 @@ class Appointment(Base):
     status: Mapped[str] = mapped_column(String(30), default="booked")
     version: Mapped[int] = mapped_column(Integer, default=1)
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+
+
+class BookingRequest(Base):
+    __tablename__ = "booking_requests"
+    __table_args__ = (CheckConstraint("preferred_ends_at > preferred_starts_at"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(unique=True)
+    full_name: Mapped[str] = mapped_column(String(200))
+    phone: Mapped[str] = mapped_column(String(40), index=True)
+    line_id: Mapped[str] = mapped_column(String(120), default="")
+    service_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("clinic_services.id"))
+    service_name: Mapped[str] = mapped_column(String(200))
+    preferred_starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    preferred_ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    note: Mapped[str] = mapped_column(String(1000), default="")
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
